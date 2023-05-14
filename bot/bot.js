@@ -1,21 +1,23 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-
+const redis = require('redis');
 const colors = require('colors');
 const cron = require('node-cron');
 const dotenv = require('dotenv');
 dotenv.config();
 
 
-const youtube_key = process.env.YOUTUBE_KEY;
-/**
- * Stuff to handle getting the latest livestreams to update
- */
-// Scheduled task to find Videos to send live notifs for
-cron.schedule(`* * * * *`, () => {
-    console.log("Runs every minute!")
+// creates a redis client w/ node-redis package and connects to redis store
+const redisClient = redis.createClient({ url: `redis://redis:6379`});
+redisClient.on("error", (err) => {
+    console.log(`${err}`.red)
+});
+redisClient.on("connect", (err) => {
+    console.log("Connected to Redis!".green)
 })
+redisClient.connect();
+
 
 
 
@@ -60,7 +62,13 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
     try {
-        await command.execute(interaction);
+        // If pass_redis is truthy, passes down the redis_client as an argument.
+        if(command?.pass_redis){
+            await command.execute(interaction, redisClient);
+        }
+        else {
+            await command.execute(interaction);
+        }
     } catch(error) {
         console.error(error);
         if(interaction.replied || interaction.deferred) {
@@ -69,7 +77,7 @@ client.on(Events.InteractionCreate, async interaction => {
         await interaction.reply({content: 'There was an error while executing this command', ephemeral: true});
     }
 
-    console.log(interaction);
+    //console.log(interaction);
 });
 
 
