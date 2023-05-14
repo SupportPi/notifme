@@ -7,12 +7,19 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     pass_redis: true,
     execute: async (interaction, redisClient) => {
+        console.log(interaction);
         const guild_id = interaction.guild.id;
         try {
             const subs = await redisClient.sMembers(`${guild_id}-subs`);
             let desc = "";
             for(const sub of subs) {
-                desc+=" •\t" + sub;
+                const channelId = await redisClient.get(`${guild_id}-${sub}-notif_channel`);
+                // channel name
+                if(channelId){ 
+                    desc += " •\t" + sub + " is notified in " + `<#${channelId}>`;
+                } else {
+                    desc +=" •\t" + sub;
+                }
                 desc+="\n";
             }
             const embed = new EmbedBuilder()

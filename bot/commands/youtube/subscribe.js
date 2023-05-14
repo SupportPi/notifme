@@ -48,6 +48,12 @@ module.exports = {
             .setDescription('the message to display when the channel goes live.')
             .setRequired(true)
         )
+        .addChannelOption((opt)=>
+            opt
+            .setName("notif_channel")
+            .setDescription('channel to send Notifications in (will default)')
+            .setRequired(false)
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     
     pass_redis: true,
@@ -58,8 +64,8 @@ module.exports = {
         // gets the options from the slash command
         const channel_handle = interaction.options.getString('channel_handle');
         const live_message = interaction.options.getString('live_message');
-
-
+        const notif_channel = interaction.options.getChannel('notif_channel')
+        console.log(notif_channel?.id);
 
 
         // Converts the Handle into a channelId and attempts to store it + the live_message in the redis store
@@ -73,13 +79,16 @@ module.exports = {
             if(channelId && handle){
                 await redisClient.set(channel_handle, channelId);
                 await redisClient.set(`${guild_id}-${channel_handle}-live_message`, live_message);
+                if(notif_channel) {
+                    await redisClient.set(`${guild_id}-${channel_handle}-notif_channel`, notif_channel.id);
+                }
             }
             else {
                 throw new Error("Failed to retrieve the ChannelId");
             }   
         } catch (err){ 
             console.error(err);
-            return await interaction.reply('failed to add channel... check logs')
+            return await interaction.reply(`Failed to retrieve ${handle}'s channel id via a dependent Api - \n Please try again later.`)
         }
 
 
@@ -88,11 +97,10 @@ module.exports = {
             await redisClient.sAdd(`${guild_id}-subs`, handle);
         } catch(err) {
             console.error(err);
-            return await interaction.reply('failed to add channel... check logs')
+            return await interaction.reply(`Failed to add ${handle} to the Guild's Subscription Set.`)
         }
             
-        
 
-        await interaction.reply('it didn\'t explode (surprisingly)\n' + channelId);
+        await interaction.reply(`Added ${handle} to the Guild's Subscription Set.`);
     }
 }
