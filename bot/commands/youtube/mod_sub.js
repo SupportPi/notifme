@@ -41,12 +41,12 @@ module.exports = {
                 if(notif_channel) 
                     await redisClient.set(`${guild_id}-${channel_handle}-notif_channel`, notif_channel.id);
             } else {
-                return await interaction.reply(`${channel_handle} is not in this Guild's Subscription Set.`)
+                return await interaction.reply(`> ${channel_handle} is not in this Guild's Subscription Set.`)
             }
         } catch(err) {
             console.error(err);
             return await interaction.reply(`Error updating ${channel_handle}'s Options.`)
         }
-        await interaction.reply(`Modified ${channel_handle}'s Subscription Options.`);
+        await interaction.reply(`> Modified ${channel_handle}'s Subscription Options.`);
     }
 }

@@ -24,13 +24,12 @@ module.exports = {
             const handle_2 = handle.replace("@", ""); // cleans handle of @
             try {
                 const req = `https://yt.lemnoslife.com/channels?handle=@${handle_2}`;
-                const fetched = await fetch(req);
+                const fetched = await fetch(req, {rejectUnauthorized: false});
                 const parsed = await fetched.json();
                 return parsed.items[0].id;
             } catch (err) {
-                console.log("error encountered")
                 console.log(err);
-                resolve(result);
+                return "failed";
             }
     },
     data: new SlashCommandBuilder()
@@ -72,8 +71,14 @@ module.exports = {
         
         //const handle_id = await this.handle_to_id(channel_handle);
         const handle = channel_handle;
-        const channelId = await this.handle_to_id(channel_handle)
-
+        let channelId = await this.handle_to_id(channel_handle)
+        if(channelId === "failed"){
+            const nid = redisClient.get(channel_handle);
+            if(nid)
+                channelId = nid;
+            else 
+                throw new Error("Failed!");
+        }
         console.log(channelId, handle);
         try {
             if(channelId && handle){
@@ -88,7 +93,7 @@ module.exports = {
             }   
         } catch (err){ 
             console.error(err);
-            return await interaction.reply(`Failed to retrieve ${handle}'s channel id via a dependent Api - \n Please try again later.`)
+            return //await interaction.reply(`> Failed to retrieve ${handle}'s channel id via a dependent Api - \n Please try again later.`)
         }
 
 
@@ -97,10 +102,10 @@ module.exports = {
             await redisClient.sAdd(`${guild_id}-subs`, handle);
         } catch(err) {
             console.error(err);
-            return await interaction.reply(`Failed to add ${handle} to the Guild's Subscription Set.`)
+            return //await interaction.reply(`> Failed to add ${handle} to the Guild's Subscription Set.`)
         }
             
 
-        await interaction.reply(`Added ${handle} to the Guild's Subscription Set.`);
+        return await interaction.reply(`> Added ${handle} to the Guild's Subscription Set.`);
     }
 }
